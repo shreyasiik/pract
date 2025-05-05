@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #121212; color: white; text-align: center; }
+        #chat-container { width: 50%; margin: auto; border-radius: 10px; padding: 20px; background: #1e1e2f; box-shadow: 0px 0px 10px rgba(255,255,255,0.1); }
+        #chat-box { height: 400px; overflow-y: auto; border-radius: 10px; padding: 10px; background: #2c2c3b; }
+        .msg { padding: 12px; margin: 8px; border-radius: 10px; display: inline-block; max-width: 80%; }
+        .own-msg { background: #4CAF50; color: white; text-align: right; float: right; }
+        .other-msg { background: #3A3B3C; color: white; text-align: left; float: left; }
+        #msg-input { width: 75%; padding: 10px; font-size: 16px; border-radius: 5px; border: none; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container">
+        <h2>💬 Flask Chat Room</h2>
+        <p>Welcome, <strong>{{ avatar }} {{ username }}</strong>!</p>
+
+        <div id="chat-box">
+            <!-- Show stored messages when user logs in -->
+            {% for user, avatar, timestamp, message in chat_history %}
+                <p class="msg {% if user == username %}own-msg{% else %}other-msg{% endif %}">
+                    <strong>{{ avatar }} {{ user }} [{{ timestamp }}]:</strong> {{ message }}
+                </p>
+            {% endfor %}
+        </div>
+
+        <input id="msg-input" type="text" placeholder="Type a message..." onkeydown="handleEnter(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        var socket = io();
+        var user = "{{ username }}";
+        var avatar = "{{ avatar }}";
+
+        socket.on("message", function(msg) {
+            var chatBox = document.getElementById("chat-box");
+            var newMsg = document.createElement("p");
+            newMsg.classList.add("msg");
+
+            if (msg.includes(user)) {
+                newMsg.classList.add("own-msg");
+            } else {
+                newMsg.classList.add("other-msg");
+            }
+
+            newMsg.innerHTML = msg;
+            chatBox.appendChild(newMsg);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Auto-scroll to latest message
+        });
+
+        function sendMessage() {
+            var msg = document.getElementById("msg-input").value;
+            if (msg.trim() !== "") {
+                socket.send(msg);
+                document.getElementById("msg-input").value = "";
+            }
+        }
+
+        function handleEnter(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+    </script>
+
+</body>
+</html>
